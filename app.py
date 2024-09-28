@@ -6,8 +6,7 @@ app = Flask(__name__)
 # Configurações da API Viva Wallet
 VIVA_API_URL = "https://demo-api.vivapayments.com"
 VIVA_AUTH_URL = "https://demo-accounts.vivapayments.com/connect/token"
-CLIENT_ID = 'a98acf6c-0832-4ef1-abe1-b96aaa613c7a'  
-CLIENT_SECRET = '2756t6v030z3ycmG1rep61s5GrH0qQ' 
+CLIENT_CREDENTIALS = "OHhna2d2eTk3YXo1djJmcTZyNHMxNDNjOXRkcXdrMW4wNm13cWRkdHdyNjg2LmFwcHMudml2YXBheW1lbnRzLmNvbTp6ODlBMFRGMjhEVDFiOTl1NDFlajExemJLNjVQM1c="
 
 # Rota da página inicial
 @app.route('/')
@@ -21,7 +20,7 @@ def checkout():
     description = request.form.get('description', 'Pagamento na loja')
 
     # Obter o token de autenticação
-    auth_token = token_prov
+    auth_token = get_viva_token()
     print(f"Token obtido: {auth_token}")
     if not auth_token:
         return "Erro ao obter token de autenticação", 500
@@ -37,20 +36,31 @@ def checkout():
     checkout_url = f"https://demo.vivapayments.com/web/checkout?ref={order_code}"
     return redirect(checkout_url)
 # Função para obter o token de autenticação
+
 def get_viva_token():
-    auth_data = {
-        'grant_type': 'client_credentials',
-        'client_id': CLIENT_ID,       # Merchant ID
-        'client_secret': CLIENT_SECRET  # API Key
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': f'Basic {CLIENT_CREDENTIALS}'
+    }
+
+    data = {
+        'grant_type': 'client_credentials'
     }
 
     try:
-        response = requests.post(VIVA_AUTH_URL, data=auth_data)
-        response.raise_for_status()  # Verifica se a resposta foi bem-sucedida
-        return response.json().get('access_token')
+        response = requests.post(VIVA_AUTH_URL, headers=headers, data=data)
+        response.raise_for_status()  # Garante que exceções serão levantadas para erros HTTP
+
+        token_data = response.json()
+
+        if 'access_token' in token_data:
+            return token_data['access_token']
+        else:
+            print(f"Erro ao obter token: {token_data}")
+            return None
+
     except requests.RequestException as e:
-        print(f"Erro ao obter token: {e}")
-        print(f"Resposta da API: {response.text}")  # Mostra o conteúdo da resposta para diagnóstico
+        print(f"Erro ao solicitar token: {e}, Resposta: {response.text}")
         return None
 # Função para criar o pedido de pagamento no Viva Wallet
 def create_viva_order(token, amount, description):
