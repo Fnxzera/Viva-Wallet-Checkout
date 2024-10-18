@@ -1,13 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for
 import requests
-
+import os
+from dotenv import load_dotenv
 app = Flask(__name__)
 
+load_dotenv()
 # Configurações da API Viva Wallet
 VIVA_API_URL = "https://demo-api.vivapayments.com"
 VIVA_AUTH_URL = "https://demo-accounts.vivapayments.com/connect/token"
-CLIENT_CREDENTIALS = "OHhna2d2eTk3YXo1djJmcTZyNHMxNDNjOXRkcXdrMW4wNm13cWRkdHdyNjg2LmFwcHMudml2YXBheW1lbnRzLmNvbTp6ODlBMFRGMjhEVDFiOTl1NDFlajExemJLNjVQM1c="
-
+CLIENT_CREDENTIALS = os.getenv('CREDENTIALS')
 # Rota da página inicial
 @app.route('/')
 def index():
@@ -21,7 +22,7 @@ def checkout():
 
     # Obter o token de autenticação
     auth_token = get_viva_token()
-    print(f"Token obtido: {auth_token}")
+    
     if not auth_token:
         return "Erro ao obter token de autenticação", 500
 
